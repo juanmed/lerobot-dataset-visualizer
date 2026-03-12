@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
+import { loadManifest } from "@/lib/manifestDataset";
 
 declare global {
   interface Window {
@@ -33,9 +34,29 @@ const EXAMPLE_DATASETS = [
 function HomeInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [manifestError, setManifestError] = useState<string | null>(null);
 
   // Handle redirects with useEffect instead of direct redirect
   useEffect(() => {
+    const manifestParam = searchParams.get("manifest");
+    if (manifestParam) {
+      try {
+        const manifest = loadManifest();
+        if (manifest) {
+          const datasetId = manifest.dataset_id?.trim() || "signed-manifest";
+          router.push(
+            `/manifest/${encodeURIComponent(datasetId)}/episode_0?manifest=${encodeURIComponent(manifestParam)}`,
+          );
+          return;
+        }
+      } catch (error) {
+        setManifestError(
+          error instanceof Error ? error.message : "Invalid manifest parameter.",
+        );
+        return;
+      }
+    }
+
     // Redirect to the first episode of the dataset if REPO_ID is defined
     if (process.env.REPO_ID) {
       const episodeN =
@@ -70,6 +91,19 @@ function HomeInner() {
       return;
     }
   }, [searchParams, router]);
+
+  if (manifestError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950 text-red-400">
+        <div className="max-w-xl rounded border border-red-500 bg-slate-900 p-8 shadow-lg">
+          <h2 className="mb-4 text-2xl font-bold">Invalid manifest</h2>
+          <p className="whitespace-pre-wrap font-mono text-lg">
+            {manifestError}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const playerRef = useRef<{ destroy?: () => void } | null>(null);
 

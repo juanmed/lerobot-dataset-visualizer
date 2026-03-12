@@ -1,10 +1,22 @@
 import { describe, expect, test, mock, afterEach } from "bun:test";
 import { buildVersionedUrl } from "@/utils/versionUtils";
 
+function setWindowSearch(search: string) {
+  Object.defineProperty(globalThis, "window", {
+    value: { location: { search } },
+    configurable: true,
+    writable: true,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // buildVersionedUrl — pure function, no mocking needed
 // ---------------------------------------------------------------------------
 describe("buildVersionedUrl", () => {
+  afterEach(() => {
+    delete (globalThis as typeof globalThis & { window?: Window }).window;
+  });
+
   test("builds URL for v2.0 dataset data path", () => {
     const url = buildVersionedUrl(
       "rabhishek100/so100_train_dataset",
@@ -53,6 +65,25 @@ describe("buildVersionedUrl", () => {
     const url = buildVersionedUrl("myorg/mydataset", "v3.0", "meta/info.json");
     expect(url).toBe(
       "https://huggingface.co/datasets/myorg/mydataset/resolve/main/meta/info.json",
+    );
+  });
+
+  test("returns signed manifest URLs when manifest mode is enabled", () => {
+    const manifest = btoa(
+      JSON.stringify({
+        dataset_id: "dataset-123",
+        files: [
+          {
+            relative_path: "meta/info.json",
+            signed_url: "https://signed.example/meta-info",
+          },
+        ],
+      }),
+    );
+    setWindowSearch(`?manifest=${encodeURIComponent(manifest)}`);
+
+    expect(buildVersionedUrl("ignored/repo", "v3.0", "meta/info.json")).toBe(
+      "https://signed.example/meta-info",
     );
   });
 });
