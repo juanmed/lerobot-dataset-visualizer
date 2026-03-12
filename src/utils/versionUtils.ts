@@ -3,7 +3,7 @@
  */
 
 const DATASET_URL =
-  process.env.DATASET_URL || "https://huggingface.co/datasets";
+  process.env.DATASET_URL || "https://api.gamiphy.ai/datasets";
 
 /**
  * Dataset information structure from info.json
