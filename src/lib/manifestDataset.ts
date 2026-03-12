@@ -25,23 +25,27 @@ function buildManifestError(message: string, cause?: unknown): Error {
   return error;
 }
 
+function decodeManifest(param: string): unknown {
+  const base64 = param.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = "=".repeat((4 - (base64.length % 4 || 4)) % 4);
+  const json = decodeURIComponent(
+    Array.prototype.map
+      .call(atob(base64 + padding), (c: string) => {
+        return `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`;
+      })
+      .join(""),
+  );
+
+  return JSON.parse(json);
+}
+
 function parseManifestParam(manifestParam: string): ManifestDataset {
-  let decoded: string;
+  let parsed: unknown;
   try {
-    decoded = atob(manifestParam);
+    parsed = decodeManifest(manifestParam);
   } catch (error) {
     throw buildManifestError(
       "Invalid manifest parameter: failed to decode base64 payload.",
-      error,
-    );
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(decoded);
-  } catch (error) {
-    throw buildManifestError(
-      "Invalid manifest parameter: failed to parse manifest JSON.",
       error,
     );
   }
@@ -115,14 +119,14 @@ function refreshManifestCache(): ManifestDataset | null {
       );
     }
     cachedManifest = manifest;
-    console.log("Manifest dataset mode enabled");
+    console.log("Manifest dataset mode enabled", manifest);
     return cachedManifest;
   } catch (error) {
-    cachedError =
-      error instanceof Error
-        ? error
-        : buildManifestError("Invalid manifest parameter.", error);
-    console.error(cachedError.message);
+    console.error("Invalid manifest parameter:", error);
+    cachedError = buildManifestError(
+      "Invalid manifest parameter: failed to decode base64 payload.",
+      error,
+    );
     throw cachedError;
   }
 }

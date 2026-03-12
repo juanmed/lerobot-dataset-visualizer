@@ -17,6 +17,18 @@ function encodeManifest(manifest: ManifestDataset): string {
   return btoa(JSON.stringify(manifest));
 }
 
+function encodeManifestUrlSafe(manifest: ManifestDataset): string {
+  return btoa(
+    encodeURIComponent(JSON.stringify(manifest)).replace(
+      /%([0-9A-F]{2})/g,
+      (_, hex: string) => String.fromCharCode(parseInt(hex, 16)),
+    ),
+  )
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
 afterEach(() => {
   delete (globalThis as typeof globalThis & { window?: Window }).window;
 });
@@ -52,6 +64,27 @@ describe("manifestDataset", () => {
     );
     expect(getFileUrl("/videos/front_cam_episode_000001.mp4")).toBe(
       "https://signed.example/video-1",
+    );
+  });
+
+  test("loads URL-safe base64 manifests with stripped padding", () => {
+    const manifest = {
+      dataset_id: "dataset-unicode",
+      files: [
+        {
+          relative_path: "meta/info.json",
+          signed_url: "https://signed.example/meta-info?label=robot_%E2%9C%93",
+        },
+      ],
+    };
+
+    setWindowSearch(
+      `?manifest=${encodeURIComponent(encodeManifestUrlSafe(manifest))}`,
+    );
+
+    expect(loadManifest()).toEqual(manifest);
+    expect(getFileUrl("meta/info.json")).toBe(
+      "https://signed.example/meta-info?label=robot_%E2%9C%93",
     );
   });
 
