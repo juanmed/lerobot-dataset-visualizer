@@ -96,7 +96,7 @@ describe("manifestDataset", () => {
     );
   });
 
-  test("throws a clear error when a requested manifest file is missing", () => {
+  test("returns null when a requested manifest file is missing", () => {
     const manifest = {
       dataset_id: "dataset-123",
       files: [
@@ -109,8 +109,6 @@ describe("manifestDataset", () => {
 
     setWindowSearch(`?manifest=${encodeURIComponent(encodeManifest(manifest))}`);
 
-    expect(() => getFileUrl("meta/stats.json")).toThrow(
-      "Manifest file not found for path: meta/stats.json",
-    );
+    expect(getFileUrl("meta/stats.json")).toBeNull();
   });
 });

@@ -144,9 +144,8 @@ export function getFileUrl(relativePath: string): string | null {
   const normalizedPath = normalizeRelativePath(relativePath);
   const fileUrl = cachedFileMap.get(normalizedPath);
   if (!fileUrl) {
-    throw buildManifestError(
-      `Manifest file not found for path: ${normalizedPath}`,
-    );
+    console.warn(`Optional manifest file missing: ${normalizedPath}`);
+    return null;
   }
 
   return fileUrl;
