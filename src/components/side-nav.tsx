@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import React, { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useFlaggedEpisodes } from "@/context/flagged-episodes-context";
 
 import type { DatasetDisplayInfo } from "@/app/[org]/[dataset]/[episode]/fetch-data";
@@ -33,6 +34,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [mobileVisible, setMobileVisible] = useState(false);
   const { flagged, count, toggle } = useFlaggedEpisodes();
+  const searchParams = useSearchParams();
+
+  const episodeHref = (episode: number) => {
+    const qs = searchParams.toString();
+    return `./episode_${episode}${qs ? `?${qs}` : ""}`;
+  };
 
   const displayEpisodes = useMemo(() => {
     if (!showFlaggedOnly || count === 0) return paginatedEpisodes;
@@ -85,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </button>
                 ) : (
                   <Link
-                    href={`./episode_${episode}`}
+                    href={episodeHref(episode)}
                     className={`underline ${episode === episodeId ? "-ml-1 font-bold" : ""}`}
                   >
                     Episode {episode}

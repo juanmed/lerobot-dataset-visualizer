@@ -422,12 +422,21 @@ function EpisodeViewerInner({
             nextEpisodeId >= lowestEpisodeId &&
             nextEpisodeId <= highestEpisodeId
           ) {
-            router.push(`./episode_${nextEpisodeId}`);
+            const qs = searchParams.toString();
+            router.push(`./episode_${nextEpisodeId}${qs ? `?${qs}` : ""}`);
           }
         }
       }
     },
-    [activeTab, episodeId, episodes, router, setIsPlaying, urdfEpisode],
+    [
+      activeTab,
+      episodeId,
+      episodes,
+      router,
+      searchParams,
+      setIsPlaying,
+      urdfEpisode,
+    ],
   );
 
   // Initialize based on URL time parameter

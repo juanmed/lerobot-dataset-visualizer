@@ -56,7 +56,9 @@ describe("manifestDataset", () => {
       ],
     };
 
-    setWindowSearch(`?manifest=${encodeURIComponent(encodeManifest(manifest))}`);
+    setWindowSearch(
+      `?manifest=${encodeURIComponent(encodeManifest(manifest))}`,
+    );
 
     expect(loadManifest()).toEqual(manifest);
     expect(getFileUrl("meta/info.json")).toBe(
@@ -107,7 +109,9 @@ describe("manifestDataset", () => {
       ],
     };
 
-    setWindowSearch(`?manifest=${encodeURIComponent(encodeManifest(manifest))}`);
+    setWindowSearch(
+      `?manifest=${encodeURIComponent(encodeManifest(manifest))}`,
+    );
 
     expect(getFileUrl("meta/stats.json")).toBeNull();
   });

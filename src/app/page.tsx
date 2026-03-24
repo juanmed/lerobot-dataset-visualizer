@@ -51,7 +51,9 @@ function HomeInner() {
         }
       } catch (error) {
         setManifestError(
-          error instanceof Error ? error.message : "Invalid manifest parameter.",
+          error instanceof Error
+            ? error.message
+            : "Invalid manifest parameter.",
         );
         return;
       }

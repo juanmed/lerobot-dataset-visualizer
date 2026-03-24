@@ -1165,9 +1165,12 @@ async function loadEpisodeMetadataV3Simple(
 
   let episodeRow = null;
   let fileIndex = 0;
-  const chunkIndex = 0; // Episodes are typically in chunk-000
+  let chunkIndex = 0;
 
-  // Try loading episode metadata files until we find the episode
+  // Scan metadata files to find the episode row.
+  // Within a chunk, increment fileIndex on each successful (but miss) fetch.
+  // When a fetch fails at fileIndex > 0 the chunk is exhausted — roll to the
+  // next chunk. When a fetch fails at fileIndex === 0 there are no more chunks.
   while (!episodeRow) {
     const episodesMetadataPath = buildV3EpisodesMetadataPath(
       chunkIndex,
@@ -1184,15 +1187,12 @@ async function loadEpisodeMetadataV3Simple(
       const episodesData = await readParquetAsObjects(arrayBuffer, []);
 
       if (episodesData.length === 0) {
-        // Empty file, try next one
         fileIndex++;
         continue;
       }
 
-      // Find the row for the requested episode by episode_index
       for (const row of episodesData) {
         const parsedRow = parseEpisodeRowSimple(row);
-
         if (parsedRow.episode_index === episodeId) {
           episodeRow = row;
           break;
@@ -1200,14 +1200,20 @@ async function loadEpisodeMetadataV3Simple(
       }
 
       if (!episodeRow) {
-        // Not in this file, try the next one
         fileIndex++;
       }
     } catch {
-      // File doesn't exist - episode not found
-      throw new Error(
-        `Episode ${episodeId} not found in metadata (searched up to file-${fileIndex.toString().padStart(PADDING.CHUNK_INDEX, "0")}.parquet)`,
-      );
+      if (fileIndex > 0) {
+        // This chunk has no more files — try the next chunk
+        chunkIndex++;
+        fileIndex = 0;
+      } else {
+        // chunk-N/file-000 itself is missing — no more chunks to search
+        const lastSearched = `chunk-${chunkIndex.toString().padStart(PADDING.CHUNK_INDEX, "0")}/file-${fileIndex.toString().padStart(PADDING.FILE_INDEX, "0")}`;
+        throw new Error(
+          `Episode ${episodeId} not found in metadata (searched up to ${lastSearched}.parquet)`,
+        );
+      }
     }
   }
 
